@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Foodhub Savings Calculator</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; background: #f9f9f9; }
+  h1 { text-align: center; }
+  label { display: block; margin-top: 1rem; }
+  input[type="number"] { width: 100%; padding: 0.5rem; font-size: 1rem; }
+  button { margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-size: 1rem; }
+  .results { margin-top: 2rem; background: #fff; padding: 1rem; border-radius: 6px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<h1>Foodhub Savings Calculator</h1>
+
+<form id="calculatorForm">
+  <label>
+    Total orders per month:
+    <input type="number" id="totalOrders" min="0" step="1" required />
+  </label>
+
+  <label>
+    Average order value (£):
+    <input type="number" id="averageOrderValue" min="0" step="0.01" required />
+  </label>
+
+  <h2>Foodhub Fees</h2>
+  <label>
+    Monthly flat fee (£):
+    <input type="number" id="foodhubMonthlyFee" min="0" step="0.01" required />
+  </label>
+  <label>
+    Percentage fee per order (%):
+    <input type="number" id="foodhubPercentageFee" min="0" step="0.01" required />
+  </label>
+  <label>
+    Fixed fee per order (£):
+    <input type="number" id="foodhubFixedFee" min="0" step="0.01" required />
+  </label>
+
+  <h2>Competitor Fees</h2>
+  <label>
+    Monthly flat fee (£):
+    <input type="number" id="competitorMonthlyFee" min="0" step="0.01" required />
+  </label>
+  <label>
+    Percentage fee per order (%):
+    <input type="number" id="competitorPercentageFee" min="0" step="0.01" required />
+  </label>
+  <label>
+    Fixed fee per order (£):
+    <input type="number" id="competitorFixedFee" min="0" step="0.01" required />
+  </label>
+
+  <button type="submit">Calculate Savings</button>
+</form>
+
+<div class="results" id="results" style="display:none;">
+  <h2>Results</h2>
+  <p id="foodhubTotal"></p>
+  <p id="competitorTotal"></p>
+  <p id="monthlySavings"></p>
+  <p id="annualSavings"></p>
+  <p id="message"></p>
+</div>
+
+<script>
+document.getElementById('calculatorForm').addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  // Get input values
+  const totalOrders = parseFloat(document.getElementById('totalOrders').value);
+  const averageOrderValue = parseFloat(document.getElementById('averageOrderValue').value);
+
+  const foodhubMonthlyFee = parseFloat(document.getElementById('foodhubMonthlyFee').value);
+  const foodhubPercentageFee = parseFloat(document.getElementById('foodhubPercentageFee').value);
+  const foodhubFixedFee = parseFloat(document.getElementById('foodhubFixedFee').value);
+
+  const competitorMonthlyFee = parseFloat(document.getElementById('competitorMonthlyFee').value);
+  const competitorPercentageFee = parseFloat(document.getElementById('competitorPercentageFee').value);
+  const competitorFixedFee = parseFloat(document.getElementById('competitorFixedFee').value);
+
+  // Calculate fees
+  const foodhubOrderFeeTotal = totalOrders * ((foodhubPercentageFee / 100) * averageOrderValue + foodhubFixedFee);
+  const foodhubMonthlyTotal = foodhubMonthlyFee + foodhubOrderFeeTotal;
+
+  const competitorOrderFeeTotal = totalOrders * ((competitorPercentageFee / 100) * averageOrderValue + competitorFixedFee);
+  const competitorMonthlyTotal = competitorMonthlyFee + competitorOrderFeeTotal;
+
+  const monthlySavings = competitorMonthlyTotal - foodhubMonthlyTotal;
+  const annualSavings = monthlySavings * 12;
+
+  // Show results
+  document.getElementById('foodhubTotal').textContent = `Foodhub Total Monthly Cost: £${foodhubMonthlyTotal.toFixed(2)}`;
+  document.getElementById('competitorTotal').textContent = `Competitor Total Monthly Cost: £${competitorMonthlyTotal.toFixed(2)}`;
+  document.getElementById('monthlySavings').textContent = `Estimated Monthly Savings: £${monthlySavings.toFixed(2)}`;
+  document.getElementById('annualSavings').textContent = `Estimated Annual Savings: £${annualSavings.toFixed(2)}`;
+
+  const messageElem = document.getElementById('message');
+  if (monthlySavings > 0) {
+    messageElem.textContent = "✅ You save money with Foodhub!";
+    messageElem.style.color = "green";
+  } else if (monthlySavings < 0) {
+    messageElem.textContent = "⚠️ Competitor is currently cheaper.";
+    messageElem.style.color = "red";
+  } else {
+    messageElem.textContent = "ℹ️ Costs are the same with both services.";
+    messageElem.style.color = "gray";
+  }
+
+  document.getElementById('results').style.display = 'block';
+});
+</script>
+
+</body>
+</html>
