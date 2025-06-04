@@ -2,236 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foodhub Savings Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 700px; margin: 2rem auto; padding: 1rem; background: #f9f9f9; }
-    h1, h2 { text-align: center; }
-    label { display: block; margin-top: 1rem; }
-    input[type="number"], select { width: 100%; padding: 0.5rem; font-size: 1rem; }
-    button { margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-size: 1rem; cursor: pointer; }
-    .results { margin-top: 2rem; background: #fff; padding: 1rem; border-radius: 6px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+      margin: 0 auto;
+      max-width: 600px;
+    }
+    label, select, input {
+      display: block;
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+    }
+    #monthlySavings, #annualSavings {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .positive {
+      color: green;
+    }
+    .negative {
+      color: red;
+    }
+    canvas {
+      margin-top: 2rem;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body>
+  <h1>Foodhub Savings Calculator</h1>
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Foodhub-logo.png" alt="Foodhub Logo" style="max-width: 200px; display: block; margin: 0 auto 1rem;" />
+  <label for="totalOrders">Total Monthly Orders:</label>
+  <input type="number" id="totalOrders" />
 
-<h1>Foodhub Savings Calculator</h1>
+  <label for="orderValue">Average Order Value:</label>
+  <input type="number" id="orderValue" />
 
-<form id="calculatorForm">
-  <label>
-    Total orders per month:
-    <input type="number" id="totalOrders" min="0" step="1" required />
-  </label>
+  <label for="competitor">Choose Competitor:</label>
+  <select id="competitor">
+    <option value="">-- Select --</option>
+    <option value="justeat">Just Eat</option>
+    <option value="dineorder">Dineorder</option>
+    <option value="feedme">Feedme Online</option>
+    <option value="orderyoyo">Order Yoyo</option>
+    <option value="flipdish">Flipdish</option>
+    <option value="weetech">Weetech</option>
+  </select>
 
-  <label>
-    Average order value (£):
-    <input type="number" id="averageOrderValue" min="0" step="0.01" required />
-  </label>
+  <button onclick="calculateSavings()">Calculate</button>
+  <button onclick="window.print()">Print or Save as PDF</button>
 
-  <h2>Foodhub Fees</h2>
-  <label>
-    Monthly rental fee (£):
-    <input type="number" id="foodhubMonthlyFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Transaction fee per order (%):
-    <input type="number" id="foodhubPercentageFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Fixed fee per order (£):
-    <input type="number" id="foodhubFixedFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Service charge per order you collect from customers (£):
-    <input type="number" id="foodhubServiceCharge" min="0" step="0.01" value="0" />
-  </label>
-  <label>
-    Free rental period (months):
-    <input type="number" id="promoMonths" min="0" step="1" value="0" />
-  </label>
-
-  <h2>Competitor Fees</h2>
-  <label>
-    Select Competitor:
-    <select id="competitorSelect">
-      <option value="">-- Choose Competitor --</option>
-      <option value="justeat">Just Eat</option>
-      <option value="ubereats">Uber Eats</option>
-      <option value="deliveroo">Deliveroo</option>
-      <option value="dineorder">Dineorder</option>
-      <option value="feedmeonline">Feedme Online</option>
-      <option value="orderyoyo">Order Yoyo</option>
-      <option value="flipdish">Flipdish</option>
-      <option value="weetech">Weetech</option>
-    </select>
-  </label>
-
-  <label>
-    Monthly rental fee (£):
-    <input type="number" id="competitorMonthlyFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Transaction fee per order (%):
-    <input type="number" id="competitorPercentageFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Fixed fee per order (£):
-    <input type="number" id="competitorFixedFee" min="0" step="0.01" required />
-  </label>
-  <label>
-    Service charge per order you collect from customers (£):
-    <input type="number" id="competitorServiceCharge" min="0" step="0.01" value="0" />
-  </label>
-  <label>
-    VAT on Competitor (%) :
-    <input type="number" id="competitorVATPercent" min="0" step="0.01" value="0" />
-  </label>
-
-  <button type="submit">Calculate Savings</button>
-</form>
-
-<div class="results" id="results" style="display:none;">
-  <h2>Results</h2>
-  <p id="foodhubTotal"></p>
-  <p id="competitorTotal"></p>
   <p id="monthlySavings"></p>
-  <p id="promoSavings"></p>
   <p id="annualSavings"></p>
-  <p id="message"></p>
-</div>
 
-<script>
-const competitorPresets = {
-  justeat: {
-    percentageFee: 20,
-    vatPercent: 20,
-    monthlyFee: 0,
-    fixedFee: 0,
-    serviceCharge: 0
-  },
-  ubereats: {
-    percentageFee: 30,
-    vatPercent: 20,
-    monthlyFee: 0,
-    fixedFee: 0,
-    serviceCharge: 0
-  },
-  deliveroo: {
-    percentageFee: 25,
-    vatPercent: 20,
-    monthlyFee: 0,
-    fixedFee: 0,
-    serviceCharge: 0
-  },
-  dineorder: {
-    percentageFee: 2.9,
-    vatPercent: 20,
-    monthlyFee: 60,
-    fixedFee: 0.19,
-    serviceCharge: 0
-  },
-  feedmeonline: {
-    percentageFee: 0,
-    vatPercent: 0,
-    monthlyFee: 60,
-    fixedFee: 0.80,
-    serviceCharge: 0
-  },
-  orderyoyo: {
-    percentageFee: 9,
-    vatPercent: 20,
-    monthlyFee: 0,
-    fixedFee: 0,
-    serviceCharge: 0
-  },
-  flipdish: {
-    percentageFee: 6,
-    vatPercent: 20,
-    monthlyFee: 0,
-    fixedFee: 0,
-    serviceCharge: 0
-  },
-  weetech: {
-    percentageFee: 3.4,
-    vatPercent: 0,
-    monthlyFee: 40,
-    fixedFee: 0.50,
-    serviceCharge: 0
-  }
-};
+  <canvas id="comparisonChart"></canvas>
 
-document.getElementById('competitorSelect').addEventListener('change', function () {
-  const selected = this.value;
-  if (competitorPresets[selected]) {
-    const preset = competitorPresets[selected];
-    document.getElementById('competitorPercentageFee').value = preset.percentageFee;
-    document.getElementById('competitorVATPercent').value = preset.vatPercent;
-    document.getElementById('competitorMonthlyFee').value = preset.monthlyFee;
-    document.getElementById('competitorFixedFee').value = preset.fixedFee;
-    document.getElementById('competitorServiceCharge').value = preset.serviceCharge;
-  }
-});
+  <script>
+    const competitorData = {
+      justeat: { rental: 0, transaction: 20, flatFee: 0, vat: 20 },
+      dineorder: { rental: 60, transaction: 2.9, flatFee: 0.19, vat: 20 },
+      feedme: { rental: 60, transaction: 0, flatFee: 0.8, vat: 0 },
+      orderyoyo: { rental: 0, transaction: 9, flatFee: 0, vat: 20 },
+      flipdish: { rental: 0, transaction: 6, flatFee: 0, vat: 20 },
+      weetech: { rental: 40, transaction: 3.4, flatFee: 0.5, vat: 0 }
+    };
 
-document.getElementById('calculatorForm').addEventListener('submit', function(event) {
-  event.preventDefault();
+    const foodhub = {
+      rental: 0,
+      transaction: 0,
+      flatFee: 0,
+      vat: 0
+    };
 
-  const totalOrders = parseFloat(document.getElementById('totalOrders').value);
-  const averageOrderValue = parseFloat(document.getElementById('averageOrderValue').value);
+    function calculateSavings() {
+      const orders = parseFloat(document.getElementById('totalOrders').value);
+      const orderValue = parseFloat(document.getElementById('orderValue').value);
+      const selected = document.getElementById('competitor').value;
+      if (!orders || !orderValue || !selected) return;
 
-  const foodhubMonthlyFee = parseFloat(document.getElementById('foodhubMonthlyFee').value);
-  const foodhubPercentageFee = parseFloat(document.getElementById('foodhubPercentageFee').value);
-  const foodhubFixedFee = parseFloat(document.getElementById('foodhubFixedFee').value);
-  const foodhubServiceCharge = parseFloat(document.getElementById('foodhubServiceCharge').value);
-  const promoMonths = parseInt(document.getElementById('promoMonths').value);
+      const comp = competitorData[selected];
 
-  const competitorMonthlyFee = parseFloat(document.getElementById('competitorMonthlyFee').value);
-  const competitorPercentageFee = parseFloat(document.getElementById('competitorPercentageFee').value);
-  const competitorFixedFee = parseFloat(document.getElementById('competitorFixedFee').value);
-  const competitorServiceCharge = parseFloat(document.getElementById('competitorServiceCharge').value);
-  const competitorVATPercent = parseFloat(document.getElementById('competitorVATPercent').value);
+      const compMonthly =
+        comp.rental +
+        orders * ((orderValue * (comp.transaction / 100)) + comp.flatFee);
+      const compMonthlyWithVAT = compMonthly + (compMonthly * (comp.vat / 100));
 
-  // Foodhub Costs
-  const foodhubOrderFees = totalOrders * ((foodhubPercentageFee / 100) * averageOrderValue + foodhubFixedFee);
-  const foodhubGrossCost = foodhubMonthlyFee + foodhubOrderFees;
-  const foodhubServiceIncome = totalOrders * foodhubServiceCharge;
-  const foodhubMonthlyTotal = foodhubGrossCost - foodhubServiceIncome;
+      const foodhubMonthly =
+        foodhub.rental +
+        orders * ((orderValue * (foodhub.transaction / 100)) + foodhub.flatFee);
 
-  // Competitor Costs
-  const competitorOrderFees = totalOrders * ((competitorPercentageFee / 100) * averageOrderValue + competitorFixedFee);
-  const competitorGrossCost = competitorMonthlyFee + competitorOrderFees;
-  const competitorVAT = competitorGrossCost * (competitorVATPercent / 100);
-  const competitorServiceIncome = totalOrders * competitorServiceCharge;
-  const competitorMonthlyTotal = competitorGrossCost + competitorVAT - competitorServiceIncome;
+      const monthlySavings = compMonthlyWithVAT - foodhubMonthly;
+      const annualSavings = monthlySavings * 12;
 
-  // Savings
-  const monthlySavings = competitorMonthlyTotal - foodhubMonthlyTotal;
-  const promoSavings = promoMonths * foodhubMonthlyFee;
-  const annualSavings = (monthlySavings * 12) + promoSavings;
+      document.getElementById('monthlySavings').innerHTML =
+        'Monthly Savings: <span class="' +
+        (monthlySavings >= 0 ? 'positive' : 'negative') +
+        '">' + monthlySavings.toFixed(2) + ' GBP</span>';
 
-  // Output
-  document.getElementById('foodhubTotal').textContent = `Foodhub Monthly Cost (after service charge): £${foodhubMonthlyTotal.toFixed(2)}`;
-  document.getElementById('competitorTotal').textContent = `Competitor Monthly Cost (with VAT & after service charge): £${competitorMonthlyTotal.toFixed(2)}`;
-  document.getElementById('monthlySavings').textContent = `Monthly Savings: £${monthlySavings.toFixed(2)}`;
-  document.getElementById('promoSavings').textContent = `Promo Saving (over ${promoMonths} months): £${promoSavings.toFixed(2)}`;
-  document.getElementById('annualSavings').textContent = `Total Estimated Annual Saving: £${annualSavings.toFixed(2)}`;
+      document.getElementById('annualSavings').innerHTML =
+        'Annual Savings: <span class="' +
+        (annualSavings >= 0 ? 'positive' : 'negative') +
+        '">' + annualSavings.toFixed(2) + ' GBP</span>';
 
-  const messageElem = document.getElementById('message');
-  if (annualSavings > 0) {
-    messageElem.textContent = "✅ You save money with Foodhub!";
-    messageElem.style.color = "green";
-  } else if (annualSavings < 0) {
-    messageElem.textContent = "⚠️ Competitor is cheaper annually.";
-    messageElem.style.color = "red";
-  } else {
-    messageElem.textContent = "ℹ️ Annual costs are the same.";
-    messageElem.style.color = "gray";
-  }
+      updateChart(foodhubMonthly, compMonthlyWithVAT);
+    }
 
-  document.getElementById('results').style.display = 'block';
-});
-</script>
-
+    function updateChart(foodhubCost, competitorCost) {
+      const ctx = document.getElementById('comparisonChart').getContext('2d');
+      if (window.bar) window.bar.destroy();
+      window.bar = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Foodhub', 'Competitor'],
+          datasets: [{
+            label: 'Monthly Cost (£)',
+            data: [foodhubCost, competitorCost],
+            backgroundColor: ['#28a745', '#dc3545']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
