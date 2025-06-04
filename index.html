@@ -2,140 +2,291 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Foodhub Savings Calculator</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 1rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
       margin: 0 auto;
-      max-width: 600px;
+      background: #f5f8fa;
+      padding: 1rem;
     }
-    label, select, input {
+    h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    img.logo {
       display: block;
-      margin: 0.5rem 0;
-      font-size: 1.1rem;
+      margin: 0 auto 1rem;
+      max-width: 180px;
     }
-    #monthlySavings, #annualSavings {
-      font-size: 1.2rem;
-      font-weight: bold;
+    label {
+      font-weight: 600;
+      margin-top: 1rem;
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.3rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 1rem;
+      margin-right: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      background-color: #007bff;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
     .positive {
-      color: green;
+      color: #28a745;
+      font-weight: bold;
     }
     .negative {
-      color: red;
+      color: #dc3545;
+      font-weight: bold;
     }
     canvas {
-      margin-top: 2rem;
+      margin-top: 1rem;
       max-width: 100%;
+    }
+    .section-title {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.2rem;
     }
   </style>
 </head>
 <body>
+
+  <img src="https://foodhub.co.uk/img/logo.svg" alt="Foodhub Logo" class="logo" />
   <h1>Foodhub Savings Calculator</h1>
 
-  <label for="totalOrders">Total Monthly Orders:</label>
-  <input type="number" id="totalOrders" />
+  <div id="calculatorContent">
 
-  <label for="orderValue">Average Order Value:</label>
-  <input type="number" id="orderValue" />
+    <label for="totalOrders">Total Monthly Orders:</label>
+    <input type="number" id="totalOrders" placeholder="e.g. 300" min="0" />
 
-  <label for="competitor">Choose Competitor:</label>
-  <select id="competitor">
-    <option value="">-- Select --</option>
-    <option value="justeat">Just Eat</option>
-    <option value="dineorder">Dineorder</option>
-    <option value="feedme">Feedme Online</option>
-    <option value="orderyoyo">Order Yoyo</option>
-    <option value="flipdish">Flipdish</option>
-    <option value="weetech">Weetech</option>
-  </select>
+    <label for="orderValue">Average Order Value (£):</label>
+    <input type="number" id="orderValue" placeholder="e.g. 15" min="0" step="0.01" />
 
-  <button onclick="calculateSavings()">Calculate</button>
-  <button onclick="window.print()">Print or Save as PDF</button>
+    <label for="competitor">Select Competitor:</label>
+    <select id="competitor" onchange="loadCompetitorValues()">
+      <option value="">-- Select --</option>
+      <option value="justeat">Just Eat</option>
+      <option value="dineorder">Dineorder</option>
+      <option value="feedme">Feedme Online</option>
+      <option value="orderyoyo">Order Yoyo</option>
+      <option value="flipdish">Flipdish</option>
+      <option value="weetech">Weetech</option>
+      <option value="custom">Custom Competitor</option>
+    </select>
 
-  <p id="monthlySavings"></p>
-  <p id="annualSavings"></p>
+    <div class="section-title">Foodhub Charges</div>
 
-  <canvas id="comparisonChart"></canvas>
+    <label for="fhRental">Foodhub Monthly Rental (£):</label>
+    <input type="number" id="fhRental" value="120" min="0" step="0.01" />
+
+    <label for="fhTransaction">Foodhub Transaction Fee (%):</label>
+    <input type="number" id="fhTransaction" value="0" min="0" step="0.01" />
+
+    <label for="fhFlatFee">Foodhub Flat Fee per Order (£):</label>
+    <input type="number" id="fhFlatFee" value="0" min="0" step="0.01" />
+
+    <label for="fhServiceCharge">Foodhub Service Charge per Order (£):</label>
+    <input type="number" id="fhServiceCharge" value="0" min="0" step="0.01" />
+
+    <label for="promoMonths">Free Rental Period (months):</label>
+    <input type="number" id="promoMonths" placeholder="e.g. 6" min="0" />
+
+    <div class="section-title">Competitor Charges</div>
+
+    <label for="compRental">Competitor Monthly Rental (£):</label>
+    <input type="number" id="compRental" min="0" step="0.01" />
+
+    <label for="compTransaction">Competitor Transaction Fee (%):</label>
+    <input type="number" id="compTransaction" min="0" step="0.01" />
+
+    <label for="compFlatFee">Competitor Flat Fee per Order (£):</label>
+    <input type="number" id="compFlatFee" min="0" step="0.01" />
+
+    <label for="compServiceCharge">Competitor Service Charge per Order (£):</label>
+    <input type="number" id="compServiceCharge" min="0" step="0.01" />
+
+    <label for="compVAT">Competitor VAT (%):</label>
+    <input type="number" id="compVAT" min="0" step="0.01" />
+
+    <p id="monthlySavings"></p>
+    <p id="annualSavings"></p>
+
+    <button onclick="calculateSavings()">Calculate</button>
+    <button onclick="downloadPDF()">Download as PDF</button>
+
+  </div>
+
+  <canvas id="comparisonChart" height="120"></canvas>
 
   <script>
     const competitorData = {
-      justeat: { rental: 0, transaction: 20, flatFee: 0, vat: 20 },
-      dineorder: { rental: 60, transaction: 2.9, flatFee: 0.19, vat: 20 },
-      feedme: { rental: 60, transaction: 0, flatFee: 0.8, vat: 0 },
-      orderyoyo: { rental: 0, transaction: 9, flatFee: 0, vat: 20 },
-      flipdish: { rental: 0, transaction: 6, flatFee: 0, vat: 20 },
-      weetech: { rental: 40, transaction: 3.4, flatFee: 0.5, vat: 0 }
+      justeat: { rental: 0, transaction: 20, flatFee: 0, vat: 20, serviceCharge: 0 },
+      dineorder: { rental: 60, transaction: 2.9, flatFee: 0.19, vat: 20, serviceCharge: 0 },
+      feedme: { rental: 60, transaction: 0, flatFee: 0.8, vat: 0, serviceCharge: 0 },
+      orderyoyo: { rental: 0, transaction: 9, flatFee: 0, vat: 20, serviceCharge: 0 },
+      flipdish: { rental: 0, transaction: 6, flatFee: 0, vat: 20, serviceCharge: 0 },
+      weetech: { rental: 40, transaction: 3.4, flatFee: 0.5, vat: 0, serviceCharge: 0 }
     };
 
-    const foodhub = {
-      rental: 0,
-      transaction: 0,
-      flatFee: 0,
-      vat: 0
-    };
+    let chartInstance = null;
+
+    function loadCompetitorValues() {
+      const selected = document.getElementById('competitor').value;
+      const fields = ['compRental', 'compTransaction', 'compFlatFee', 'compVAT', 'compServiceCharge'];
+
+      if (selected && selected !== 'custom' && competitorData[selected]) {
+        const c = competitorData[selected];
+        document.getElementById('compRental').value = c.rental;
+        document.getElementById('compTransaction').value = c.transaction;
+        document.getElementById('compFlatFee').value = c.flatFee;
+        document.getElementById('compVAT').value = c.vat;
+        document.getElementById('compServiceCharge').value = c.serviceCharge;
+
+        // Make competitor fields readonly
+        fields.forEach(id => document.getElementById(id).readOnly = true);
+      } else if (selected === 'custom') {
+        // Clear fields and make editable
+        fields.forEach(id => {
+          document.getElementById(id).value = '';
+          document.getElementById(id).readOnly = false;
+        });
+      } else {
+        // No competitor selected: clear and make editable
+        fields.forEach(id => {
+          document.getElementById(id).value = '';
+          document.getElementById(id).readOnly = false;
+        });
+      }
+    }
 
     function calculateSavings() {
       const orders = parseFloat(document.getElementById('totalOrders').value);
       const orderValue = parseFloat(document.getElementById('orderValue').value);
-      const selected = document.getElementById('competitor').value;
-      if (!orders || !orderValue || !selected) return;
+      const promoMonths = parseFloat(document.getElementById('promoMonths').value) || 0;
 
-      const comp = competitorData[selected];
+      const fhRental = parseFloat(document.getElementById('fhRental').value);
+      const fhTransaction = parseFloat(document.getElementById('fhTransaction').value);
+      const fhFlatFee = parseFloat(document.getElementById('fhFlatFee').value);
+      const fhServiceCharge = parseFloat(document.getElementById('fhServiceCharge').value);
 
-      const compMonthly =
-        comp.rental +
-        orders * ((orderValue * (comp.transaction / 100)) + comp.flatFee);
-      const compMonthlyWithVAT = compMonthly + (compMonthly * (comp.vat / 100));
+      const compRental = parseFloat(document.getElementById('compRental').value);
+      const compTransaction = parseFloat(document.getElementById('compTransaction').value);
+      const compFlatFee = parseFloat(document.getElementById('compFlatFee').value);
+      const compVAT = parseFloat(document.getElementById('compVAT').value);
+      const compServiceCharge = parseFloat(document.getElementById('compServiceCharge').value);
 
-      const foodhubMonthly =
-        foodhub.rental +
-        orders * ((orderValue * (foodhub.transaction / 100)) + foodhub.flatFee);
+      if (isNaN(orders) || isNaN(orderValue) || isNaN(compRental)) {
+        alert('Please fill in all required fields with valid numbers.');
+        return;
+      }
 
-      const monthlySavings = compMonthlyWithVAT - foodhubMonthly;
-      const annualSavings = monthlySavings * 12;
+      // Competitor raw monthly cost (rental + per order fees)
+      const compMonthlyRaw =
+        compRental + orders * ((orderValue * (compTransaction / 100)) + compFlatFee);
+
+      // Add VAT on competitor cost
+      const compMonthlyWithVAT = compMonthlyRaw + (compMonthlyRaw * (compVAT / 100));
+
+      // Subtract competitor service charge income (per order)
+      const compServiceIncome = orders * compServiceCharge;
+
+      const compNetCost = compMonthlyWithVAT - compServiceIncome;
+
+      // Foodhub raw monthly cost (rental + per order fees)
+      const fhMonthlyRaw =
+        fhRental + orders * ((orderValue * (fhTransaction / 100)) + fhFlatFee);
+
+      // Subtract foodhub service charge income (per order)
+      const fhServiceIncome = orders * fhServiceCharge;
+
+      const fhNetCost = fhMonthlyRaw - fhServiceIncome;
+
+      // Promo savings from free rental months
+      const promoSavings = fhRental * promoMonths;
+
+      const monthlySavings = compNetCost - fhNetCost;
+      const annualSavings = (monthlySavings * 12) + promoSavings;
 
       document.getElementById('monthlySavings').innerHTML =
-        'Monthly Savings: <span class="' +
-        (monthlySavings >= 0 ? 'positive' : 'negative') +
-        '">' + monthlySavings.toFixed(2) + ' GBP</span>';
-
+        `Monthly Savings: <span class="${monthlySavings >= 0 ? 'positive' : 'negative'}">£${monthlySavings.toFixed(2)}</span>`;
       document.getElementById('annualSavings').innerHTML =
-        'Annual Savings: <span class="' +
-        (annualSavings >= 0 ? 'positive' : 'negative') +
-        '">' + annualSavings.toFixed(2) + ' GBP</span>';
+        `Annual Savings (including free rental period): <span class="${annualSavings >= 0 ? 'positive' : 'negative'}">£${annualSavings.toFixed(2)}</span>`;
 
-      updateChart(foodhubMonthly, compMonthlyWithVAT);
+      drawChart(compNetCost, fhNetCost, promoSavings);
     }
 
-    function updateChart(foodhubCost, competitorCost) {
+    function drawChart(compCost, fhCost, promoSavings) {
       const ctx = document.getElementById('comparisonChart').getContext('2d');
-      if (window.bar) window.bar.destroy();
-      window.bar = new Chart(ctx, {
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Foodhub', 'Competitor'],
+          labels: ['Competitor Cost', 'Foodhub Cost', 'Promo Savings'],
           datasets: [{
-            label: 'Monthly Cost (£)',
-            data: [foodhubCost, competitorCost],
-            backgroundColor: ['#28a745', '#dc3545']
+            label: 'Amount (£)',
+            data: [compCost.toFixed(2), fhCost.toFixed(2), promoSavings.toFixed(2)],
+            backgroundColor: [
+              '#dc3545',
+              '#007bff',
+              '#28a745'
+            ]
           }]
         },
         options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: true }
-          },
           scales: {
-            y: { beginAtZero: true }
+            y: {
+              beginAtZero: true
+            }
           }
         }
       });
     }
+
+    function downloadPDF() {
+      const element = document.getElementById('calculatorContent');
+      const opt = {
+        margin:       0.3,
+        filename:     'foodhub_savings_calculator.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // Initialize on page load
+    window.onload = () => {
+      loadCompetitorValues();
+    };
   </script>
 </body>
 </html>
